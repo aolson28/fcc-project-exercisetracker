@@ -25,7 +25,7 @@ const userSchema = new Schema(
   {
       username: String,
       count: Number,
-      log: [{description: String, duration: Number, date: Date}]
+      log: { type : Array , "default" : [] }
   }
 );
 
@@ -34,7 +34,8 @@ const exerciseSchema = new Schema(
       username: String,
       description: String,
       duration: Number,
-      date: Date
+      date: Date,
+      userId: String
   }
 );
 
@@ -44,8 +45,7 @@ const Exercise = model('Exercise', exerciseSchema);
 app.post('/api/users', (req, res) => {
   let newUser = new User({
     username: req.body.username,
-    count: 0,
-    log: []
+    count: 0
   });    
   newUser.save().then((data) => {
       res.json({username: data.username, _id: data.id});
@@ -60,9 +60,11 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   let userID = req.params._id;
   User.findById(userID).exec().then((data) => {
     let activityDate = req.body.date ? new Date(req.body.date).toDateString() : new Date().toDateString();
-    User.updateOne({id: data.id}, {count: (data.count + 1)}).then(() => {}).catch((err) => {if (err) {console.error(err);}});
-    User.updateOne({id: data.id}, {$push: {log: {description: req.body.description, duration: Number(req.body.duration), date: activityDate}}}).then(() => {}).catch((err) => {if (err) { console.error(err);}});
-    res.json({username: data.username, description: req.body.description, duration: Number(req.body.duration), date: activityDate, _id: data.id});
+    User.findByIdAndUpdate(data.id, {count: (data.count + 1)}).then((data) => {}).catch((err) => {if (err) {console.error(err);}});
+    User.findByIdAndUpdate(data.id, {$push: {log: {description: req.body.description, duration: Number(req.body.duration), date: activityDate}}}).then((data) => {}).catch((err) => {if (err) { console.error(err);}});
+    let newExercise = new Exercise({username: data.username, description: req.body.description, duration: Number(req.body.duration), date: activityDate, userId: data.id});
+    newExercise.save().then(() => {}).catch((err) => {if (err) {console.error(err);}});
+    res.json({username: data.username, description: req.body.description, duration: Number(req.body.duration), date: activityDate, userId: data.id});
   }).catch((err) => {
     if(err) {
       console.error(err)
@@ -70,7 +72,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 });
 
 app.get('/api/users', (req, res) => {
-  User.find({},).then((data) => {
+  User.find({}).then((data) => {
     res.send(data.map((item) => {return {username: item.username, _id: item.id};}));
 }).catch((err) => {
     if (err) {
@@ -79,9 +81,14 @@ app.get('/api/users', (req, res) => {
 });
 });
 
-app.get('/api/users/:_id/logs?[from][&to][&limit]', (req, res) => {
-  console.log(req);
-})
+app.get('/api/users/:_id/logs/:from?/:to?/:limit?', (req, res) => {
+  if (!req.params.from && !req.params.to && !req.params.limit) {
+    User.findById(req.params._id).then((data) => {
+      res.json(data._doc);
+    }).catch((err) => {if (err) {console.error(err);}});
+  } else {
+  }
+});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
