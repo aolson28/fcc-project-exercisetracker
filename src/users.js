@@ -3,6 +3,7 @@ var router = express.Router();
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 
+const { url } = require('inspector');
 
 const userSchema = new Schema(
     {
@@ -23,7 +24,7 @@ const exerciseSchema = new Schema(
 const User = model('User', userSchema);
 const Exercise = model('Exercise', exerciseSchema);
 
-router.post('/users', (req, res) => {
+router.post('/', (req, res) => {
 console.log(req);
 let newUser = new User({
     username: req.body.username
@@ -37,7 +38,7 @@ newUser.save().then((data) => {
 });
 });
 
-router.post('/users/:_id/exercises', (req, res) => {
+router.post('/:_id/exercises', (req, res) => {
 User.findById(req.params._id).then((data) => {
     let activityDate = req.body.date ? new Date(req.body.date).toDateString() : new Date().toDateString();
     let newExercise = new Exercise({username: data.username, description: req.body.description, duration: Number(req.body.duration), date: activityDate, userId: data.id});
@@ -49,7 +50,7 @@ User.findById(req.params._id).then((data) => {
     }});
 });
 
-router.get('/users', (req, res) => {
+router.get('/', (req, res) => {
 User.find({}).then((data) => {
     res.send(data.map((item) => {return {username: item.username, _id: item.id};}));
 }).catch((err) => {
@@ -59,7 +60,7 @@ User.find({}).then((data) => {
 });
 });
 
-router.get('/users/:_id/logs?:from?/:to?/:limit?', (req, res) => {
+router.get('/:_id/logs?:from?/:to?/:limit?', (req, res) => {
     User.findById(req.params._id).then((data) => {
     let logQuery = Exercise.find({userId: data.id});
     if (req.query.from) {

@@ -4,22 +4,24 @@ const cors = require('cors')
 const mongoose = require('mongoose');
 const { connectMongoDB } = require('./mongodb/connectMongoDB.js')
 const { Schema, model } = mongoose;
-require('dotenv').config()
-const { url } = require('inspector');
-const mongoRouter = require('./mongodb/mongo.js');
+require('dotenv').config();
+const userRoutes = require('./src/users.js');
 
 app.use(cors())
 app.use(express.static('public'))
 app.use(express.json());
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-});
+
 app.use(express.urlencoded({
   limit: '10mb',
   extended: true
 }));
 
-app.use('/api', mongoRouter);
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/views/users.html')
+});
+
+// route all '/api' calls to a module.
+app.use('/api/users', userRoutes);
 
 
 // connect to MongoDB using Mongoose in /mongodb/connectMongoDB.js
